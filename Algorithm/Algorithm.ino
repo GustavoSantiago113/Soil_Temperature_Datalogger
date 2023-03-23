@@ -8,16 +8,15 @@
 #include <OneWire.h> // For Temperature Sensor
 #include <DallasTemperature.h> // For Temperature Sensor
 
-// Variables for SD Card
+// Variables for SD Card (Card must be FAT16 or FAT32 formats)
 File myFile;
-const int pinCS = 8;
-String fileName = "SoilTempDatalogger.txt";
+String fileName = "Block1.txt";
 
 // Variables for RTC
 RTC_DS3231 rtc;
 
 // Variables for Temp sensors
-const int ONE_WIRE_BUS = 4;
+const int ONE_WIRE_BUS = 8;
 
 // Setup a oneWire instance to communicate with any OneWire device
 OneWire oneWire(ONE_WIRE_BUS);
@@ -51,13 +50,9 @@ void setup() {
     while(1);
     
   }
-  //rtc.adjust(DateTime(2023, 2, 24, 14, 47, 0)); //Upload code once with this line so the clock is adjusted, then coment this line and upload again
+  //rtc.adjust(DateTime(__DATE__, __TIME__)); //Upload code once with this line so the clock is adjusted, then coment this line and upload again
 
-  // SD Card
-  pinMode(10, OUTPUT);
-  pinMode(pinCS, OUTPUT);
-
-  if (!SD.begin(pinCS)) {
+  if (!SD.begin(10)) {
     Serial.println("Card failed, or not present");
     digitalWrite(LED_BUILTIN, HIGH);
     return;
@@ -127,28 +122,23 @@ void loop() {
     
     // Output the device ID
     Serial.print("Temperature for device: ");
-    Serial.println(i,DEC);
+    Serial.print(i,DEC);
+    Serial.print(" - ");
     
     // Print the data
     float tempC = sensors.getTempC(tempDeviceAddress);
-    Serial.print("Temp C: ");
-    Serial.print(tempC);
+    Serial.println(tempC);
     myFile.print(tempC);
-    myFile.print(",");
-
-    // Converts tempC to Fahrenheit
-    Serial.print(" Temp F: ");
-    Serial.println(DallasTemperature::toFahrenheit(tempC)); 
-    myFile.print(DallasTemperature::toFahrenheit(tempC));
     myFile.print(",");
     
     }
   }
 
-  myFile.print("");
+  myFile.println("");
   myFile.close();
   
-  delay(60000);
+  delay(1800000);
+  //delay(1000);
 
 }
 
