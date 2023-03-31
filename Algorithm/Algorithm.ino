@@ -7,10 +7,11 @@
 #include <RTClib.h> // For RTC Clock
 #include <OneWire.h> // For Temperature Sensor
 #include <DallasTemperature.h> // For Temperature Sensor
+#include <LowPower.h> // Put Arduino to sleep and save energy
 
-// Variables for SD Card (Card must be FAT16 or FAT32 formats)
+// Variables for SD Card (Card must be FAT16 or FAT32 formats)*/
 File myFile;
-String fileName = "Block1.txt";
+String fileName = "Block2.txt"; // Change here for the name of the block (i.e. Block1.txt, Block2.txt, etc)
 
 // Variables for RTC
 RTC_DS3231 rtc;
@@ -130,15 +131,17 @@ void loop() {
     Serial.println(tempC);
     myFile.print(tempC);
     myFile.print(",");
-    
+    delay(1000);
     }
   }
 
   myFile.println("");
   myFile.close();
   
-  delay(1800000);
-  //delay(1000);
+  for(int i = 0; i<= 5400; i++) //Here (i<=5400) you insert the number of seconds divided by two (i.e. you want 1 minute, so 60/2=30)
+  {
+     LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF);
+  }
 
 }
 
