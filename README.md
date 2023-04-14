@@ -47,11 +47,15 @@ Two circuit boards were made:
 1. Connection of all the sensors in parallel. This one was left outside to not open 24 holes in the enclosure. Just 3 wires (VCC, ground and data) were passed through the enclosure. They were soldered in the board according to the sensors' terminals;
 2. Arduino shield. This board was designed to be connected to the Arduino via male pins and connect with the other modules and the sensors' board with female pins. 
 
-The files containing the circuit boards' draws are in the folder PCB.
+From the images bellow, circuit boards were designed in LibreCAD program. The files containing the circuit boards' draws are in the folder Circuit, with the name PCB.dxf.
 
-<center>Sensors' circuit board</center>
+**<center>Sensors' circuit board schema</center>**
 
-<center>Arduino shield</center>
+![Sensors' circuit board schema](Circuit/Sensors_CB_Schema.jpg)
+
+**<center>**Arduino shield schema**</center>**
+
+![Arduino circuit board schema](Circuit/Arduino_CB_Schema.jpg)
 
 ---
 
@@ -72,4 +76,4 @@ The 3D files were designed by own author in Fusion360 and printed in a Creality 
 
 ## Future works
 
-The future work is to connect the data loggers to the internet and upload the data to the cloud. With the data into an online database, there is no need of removing and reading the microSD card.
+The future work is to connect the data loggers to the internet and upload the data to the cloud. With the data into an online database, there is no need of removing and reading the microSD card and inserting automatic analysis and chart plotting.
