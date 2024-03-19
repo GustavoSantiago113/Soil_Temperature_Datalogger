@@ -1,0 +1,11 @@
+* Programar o front-end;
+
+* Encontrar e executar uma maneira melhor de soldar os sensores nos pinos;
+* Reduzir o consumo de energia do modulo de cartao SD;
+* Reduzir o consumo de energia do modulo de LoRa;
+* Montar uma PCB melhor;
+* Montar e imprimir estruturas em 3D;
+
+* Encontrar uma forma de validar;
+
+* Escrever;

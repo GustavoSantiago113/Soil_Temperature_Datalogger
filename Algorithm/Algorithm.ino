@@ -51,7 +51,7 @@ void setup() {
     while(1);
     
   }
-  //rtc.adjust(DateTime(__DATE__, __TIME__)); //Upload code once with this line so the clock is adjusted, then coment this line and upload again
+  rtc.adjust(DateTime(__DATE__, __TIME__)); //Upload code once with this line so the clock is adjusted, then coment this line and upload again
 
   if (!SD.begin(10)) {
     Serial.println("Card failed, or not present");
@@ -138,7 +138,7 @@ void loop() {
   myFile.println("");
   myFile.close();
   
-  for(int i = 0; i<= 5400; i++) //Here (i<=5400) you insert the number of seconds divided by two (i.e. you want 1 minute, so 60/2=30)
+  for(int i = 0; i<= 15; i++) //Here (i<=5400) you insert the number of seconds divided by two (i.e. you want 1 minute, so 60/2=30)
   {
      LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF);
   }
