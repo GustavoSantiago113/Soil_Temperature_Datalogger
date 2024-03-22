@@ -2,22 +2,27 @@
 
 // Including Libraries
 #include <Wire.h>
-#include <SD.h> // For SD Card
-#include <SPI.h> // For SD Card
+//#include <SD.h> // For SD Card
+//#include <SPI.h> // For SD Card
 #include <RTClib.h> // For RTC Clock
 #include <OneWire.h> // For Temperature Sensor
 #include <DallasTemperature.h> // For Temperature Sensor
 #include <LowPower.h> // Put Arduino to sleep and save energy
+#include <LoRa.h> // LoRa usage
 
-// Variables for SD Card (Card must be FAT16 or FAT32 formats)*/
-File myFile;
-String fileName = "Block2.txt"; // Change here for the name of the block (i.e. Block1.txt, Block2.txt, etc)
+// Lora pins
+#define ss 10
+#define rst 9
+#define dio0 2
+
+// Device ID
+int ID = 1;
 
 // Variables for RTC
 RTC_DS3231 rtc;
 
 // Variables for Temp sensors
-const int ONE_WIRE_BUS = 8;
+const int ONE_WIRE_BUS = 4;
 
 // Setup a oneWire instance to communicate with any OneWire device
 OneWire oneWire(ONE_WIRE_BUS);
@@ -51,14 +56,17 @@ void setup() {
     while(1);
     
   }
-  rtc.adjust(DateTime(__DATE__, __TIME__)); //Upload code once with this line so the clock is adjusted, then coment this line and upload again
+  rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); //Upload code once with this line uncommented so the clock is adjusted, then coment this line and upload again
+  LoRa.setPins(ss, rst, dio0);
 
-  if (!SD.begin(10)) {
-    Serial.println("Card failed, or not present");
-    digitalWrite(LED_BUILTIN, HIGH);
-    return;
+  // LoRa begin
+  if (LoRa.begin(915E6)) {
+    Serial.println("Starting LoRa success!");
+    delay(500);
+  }else{
+    Serial.println("Starting LoRa Failed!");
   }
-  Serial.println("card initialized.");
+  LoRa.setSyncWord(0xF3);
 
   // locate devices on the bus
   Serial.print("Locating devices...");
@@ -92,19 +100,6 @@ void loop() {
   // Send the command to get temperatures
   sensors.requestTemperatures();
 
-  // Saving everything on SD Card
-  myFile = SD.open(fileName, FILE_WRITE);
-  myFile.print(fecha.day());
-  myFile.print("/");
-  myFile.print(fecha.month());
-  myFile.print("/");
-  myFile.print(fecha.year());
-  myFile.print(",");
-  myFile.print(fecha.hour());
-  myFile.print(":");
-  myFile.print(fecha.minute());
-  myFile.print(",");
-
   Serial.print(fecha.day());
   Serial.print("/");
   Serial.print(fecha.month());
@@ -129,16 +124,14 @@ void loop() {
     // Print the data
     float tempC = sensors.getTempC(tempDeviceAddress);
     Serial.println(tempC);
-    myFile.print(tempC);
-    myFile.print(",");
-    delay(1000);
+    sendPacket(i, tempC, fecha);
+    delay(250);
     }
   }
 
-  myFile.println("");
-  myFile.close();
   
-  for(int i = 0; i<= 15; i++) //Here (i<=5400) you insert the number of seconds divided by two (i.e. you want 1 minute, so 60/2=30)
+  
+  for(int i = 0; i<= 30; i++) //Here (i<=5400) you insert the number of seconds divided by two (i.e. you want 1 minute, so 60/2=30)
   {
      LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF);
   }
