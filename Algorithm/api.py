@@ -29,11 +29,12 @@ def store():
 #Function to get data
 def obtain():
 
-    documents = collection.find()
+    data = list(collection.find())
 
-    
+    for item in data:
+        item['_id'] = str(item['_id'])
 
-    return documents
+    return jsonify(data)
 
 # Start app
 if __name__ == '__main__':
