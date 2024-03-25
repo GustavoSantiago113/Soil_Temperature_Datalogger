@@ -8,6 +8,7 @@ library(purrr)
 library(lubridate)
 library(ggplot2)
 library(plotly)
+library(shinydashboard)
 
 # Obtaining data ----
 
@@ -19,7 +20,7 @@ obtaining_data <- function(file.source, file.path = NULL, GET.API = NULL){
     csv.data <- read.csv(file.path)
     
     database <- csv.data %>%
-      mutate(Time = format(strptime(Time, format = '%H/%M', 'GMT'), '%H:%M'))
+      mutate(DateTime = as.POSIXct(strptime(DateTime, format = "%d/%m/%Y %H/%M")))
     
   }
   
@@ -29,7 +30,7 @@ obtaining_data <- function(file.source, file.path = NULL, GET.API = NULL){
     xlsx.data <- read.xlsx(file.path, sheetIndex = 1)
     
     database <- xlsx.data %>%
-      mutate(Time = format(strptime(Time, format = '%H/%M', 'GMT'), '%H:%M'))
+      mutate(DateTime = as.POSIXct(strptime(DateTime, format = "%d/%m/%Y %H/%M")))
     
   }
   
@@ -49,8 +50,7 @@ obtaining_data <- function(file.source, file.path = NULL, GET.API = NULL){
     repeated_tibble <- tibble_data %>%
       select(-c(reading)) %>%
       rename(Date = date, Group = group, Time = hour) %>%
-      mutate(Date = as.Date(Date, format = "%d/%m/%Y"),
-             Time = format(strptime(Time, format = '%H/%M', 'GMT'), '%H:%M')) %>%
+      mutate(DateTime = as.POSIXct(strptime(DateTime, format = "%d/%m/%Y %H/%M"))) %>%
       slice(rep(row_number(), each = num_repeats))
     
     readings <- as_tibble(tibble_data$reading, .name_repair="universal")
@@ -76,13 +76,14 @@ obtaining_data <- function(file.source, file.path = NULL, GET.API = NULL){
 # Generating graphics -----
 ## Last Readings ----
 
+### Bar graph ----
 last_reading_graph <- function(data, group.selected){
   
-  last.time <- tail(data$Time, n=1)
+  last.time <- tail(data$DateTime, n=1)
   
   lst.reading.data <- data %>%
     filter(Group == group.selected,
-           Time == last.time)
+           DateTime == last.time)
   
   num.breaks <- nrow(lst.reading.data)
   
@@ -99,70 +100,143 @@ last_reading_graph <- function(data, group.selected){
 
 #last_reading_graph(data = data, group.selected = "1")
 
-## Curves ----
+### Cards ----
+mean_card_blocks <- function(data){
+  
+  last.time <- tail(data$DateTime, n=1)
+  
+  lst.reading.data <- data %>%
+    filter(DateTime == last.time) %>%
+    group_by(Group) %>%
+    summarise(Value = mean(Reading))
+  
+  choices <- unique(data$Group)
+  
+  
+  lapply(choices, function(choice){
+    
+    div(
+      style = "background-color: rgb(136, 171, 184); color: black; padding: 0.3vh; width: 10%; margin: 1vh",
+      tags$h3(
+        style = "text-align: center",
+        round(lst.reading.data$Value[lst.reading.data$Group==choice], 1)
+      ),
+      tags$h5(
+        style = "text-align: end; margin-right: 10%",
+        str_glue("Block ", choice)
+      )
+    )
+    
+  })
+    
+}
+
+
+## Temperature Curves ----
 
 ### By blocks ----
 
-curve.by.blocks <- function(data, group.selected, time.scale){
+curve_by_blocks <- function(database, group.selected, time.scale){
   
-  data$Time <- as.POSIXct(data$Time, format = "%H:%M")
-  data$Date <- as.Date(data$Date)
+  database$Device <- as.factor(database$Device)
   
-  if(time.scale == "minute"){
-    curve.data <- data %>%
-      filter(Group == group.selected) %>%
-      group_by(Date,
-               Hour = hour(Time),
-               Minute = minute(Time)) %>%
-      summarise(Readings = mean(Reading, na.rm = TRUE))
-    
-    graph <- ggplot(data = curve.data,
-                    aes(x = Minute, y = Readings, group=1))+
-      geom_line()+
-      geom_point()+
-      theme_minimal()
-  }
   if(time.scale == "hour"){
-    curve.data <- data %>%
+    curve.data <- database %>%
       filter(Group == group.selected) %>%
-      group_by(Date,
-               Hour = hour(Time)) %>%
-      summarise(Readings = mean(Reading, na.rm = TRUE))
+      group_by(DateTime)
     
     graph <- ggplot(data = curve.data,
-                    aes(x = Hour, y = Readings, group=1))+
+                    aes(x = DateTime, y = Reading, color = Device))+
       geom_line()+
       geom_point()+
       theme_minimal()
   }
   if(time.scale == "day"){
-    curve.data <- data %>%
+    curve.data <- database %>%
       filter(Group == group.selected) %>%
-      group_by(Date) %>%
-      summarise(Readings = mean(Reading, na.rm = TRUE))
+      group_by(Date = format(DateTime, "%Y-%m-%d"))
     
     graph <- ggplot(data = curve.data,
-                    aes(x = Date, y = Readings, group=1))+
+                    aes(x = Date, y = Reading, color = Device))+
       geom_line()+
       geom_point()+
       theme_minimal()
   }
   if(time.scale == "week"){
-    curve.data <- data %>%
+    curve.data <- database %>%
       filter(Group == group.selected) %>%
-      group_by(Week = format(Date, "%Y-%U") ) %>%
-      summarise(Readings = mean(Reading, na.rm = TRUE))
+      group_by(Week = format(DateTime, "%Y-%U") )
     
     graph <- ggplot(data = curve.data,
-                    aes(x = Week, y = Readings, group=1))+
+                    aes(x = Week, y = Reading, color = Device))+
       geom_line()+
       geom_point()+
       theme_minimal()
   }
   if(time.scale == "month"){
-    curve.data <- data %>%
+    curve.data <- database %>%
       filter(Group == group.selected) %>%
-      group_by(Month = format(Date, "%Y-%m")) %>%
+      group_by(Month = format(DateTime, "%Y-%m"))
+    
+    graph <- ggplot(data = curve.data,
+                    aes(x = Month, y = Reading, color = Device))+
+      geom_line()+
+      geom_point()+
+      theme_minimal()
+  }
+  
+  ggplotly(graph)
+  
+}
+
+#curve.by.blocks(database = data, group.selected = "1", time.scale = "minute")
+
+### Mean of blocks ----
+
+curve_mean_blocks <- function(database, time.scale){
+  
+  database$Group <- as.factor(database$Group)
+  
+  if(time.scale == "hour"){
+    curve.data <- database %>%
+      group_by(Group,
+               DateTime) %>%
+      summarise(Readings = mean(Reading, na.rm = TRUE))
+    
+    graph <- ggplot(data = curve.data,
+                    aes(x = DateTime, y = Readings, color=Group))+
+      geom_line()+
+      geom_point()+
+      theme_minimal()
+  }
+  if(time.scale == "day"){
+    curve.data <- database %>%
+      group_by(Group,
+               Date = format(DateTime, "%Y-%m-%d")) %>%
+      summarise(Readings = mean(Reading, na.rm = TRUE))
+    
+    graph <- ggplot(data = curve.data,
+                    aes(x = Date, y = Readings, group=Group))+
+      geom_line()+
+      geom_point()+
+      theme_minimal()
+  }
+  if(time.scale == "week"){
+    curve.data <- database %>%  
+      group_by(Group,
+               Week = format(DateTime, "%Y-%U") ) %>%
+      summarise(Readings = mean(Reading, na.rm = TRUE))
+    
+    graph <- ggplot(data = curve.data,
+                    aes(x = Week, y = Readings, group=Group))+
+      geom_line()+
+      geom_point()+
+      theme_minimal()
+  }
+  if(time.scale == "month"){
+    curve.data <- database %>%
+      group_by(Group,
+               Month = format(DateTime, "%Y-%m")) %>%
       summarise(Readings = mean(Reading, na.rm = TRUE))
     
     graph <- ggplot(data = curve.data,
@@ -173,81 +247,6 @@ curve.by.blocks <- function(data, group.selected, time.scale){
   }
   
   ggplotly(graph)
-  
 }
 
-#curve.by.blocks(data = data, group.selected = "1", time.scale = "mintue")
-
-### Mean of blocks ----
-
-curve.mean.blocks <- function(data, time.scale){
-  
-  data$Time <- as.POSIXct(data$Time, format = "%H:%M")
-  data$Date <- as.Date(data$Date)
-  
-  if(time.scale == "minute"){
-    curve.data <- data %>%
-      group_by(Group,
-               Date,
-               Hour = hour(Time),
-               Minute = minute(Time)) %>%
-      summarise(Readings = mean(Reading, na.rm = TRUE))
-    
-    graph <- ggplot(data = curve.data,
-                    aes(x = Minute, y = Readings, color=Group))+
-      geom_line()+
-      geom_point()+
-      theme_minimal()
-  }
-  if(time.scale == "hour"){
-    curve.data <- data %>%
-      group_by(Group,
-               Date,
-               Hour = hour(Time)) %>%
-      summarise(Readings = mean(Reading, na.rm = TRUE))
-    
-    graph <- ggplot(data = curve.data,
-                    aes(x = Hour, y = Readings, color=Group))+
-      geom_line()+
-      geom_point()+
-      theme_minimal()
-  }
-  if(time.scale == "day"){
-    curve.data <- data %>%
-      group_by(Group, Date) %>%
-      summarise(Readings = mean(Reading, na.rm = TRUE))
-    
-    graph <- ggplot(data = curve.data,
-                    aes(x = Date, y = Readings, color=Group))+
-      geom_line()+
-      geom_point()+
-      theme_minimal()
-  }
-  if(time.scale == "week"){
-      group_by(Group,
-               Week = format(Date, "%Y-%U") ) %>%
-      summarise(Readings = mean(Reading, na.rm = TRUE))
-    
-    graph <- ggplot(data = curve.data,
-                    aes(x = Week, y = Readings, color=Group))+
-      geom_line()+
-      geom_point()+
-      theme_minimal()
-  }
-  if(time.scale == "month"){
-    curve.data <- data %>%
-      group_by(Group,
-               Month = format(Date, "%Y-%m")) %>%
-      summarise(Readings = mean(Reading, na.rm = TRUE))
-    
-    graph <- ggplot(data = curve.data,
-                    aes(x = Month, y = Readings, color=Group))+
-      geom_line()+
-      geom_point()+
-      theme_minimal()
-  }
-  
-  ggplotly(graph)
-}
-
-#curve.mean.blocks(data = data, time.scale = "minute")
+#curve.mean.blocks(database = data, time.scale = "minute")
