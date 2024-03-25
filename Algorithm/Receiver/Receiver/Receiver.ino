@@ -146,15 +146,13 @@ void loop() {
       LoRaData = LoRa.readStringUntil(':');
 
       if(LoRaData.endsWith("ID"))
-        id = LoRa.readStringUntil(' ');
+        id = LoRa.readStringUntil(',');
       if(LoRaData.endsWith("Device"))
-        device = LoRa.readStringUntil(' ');
+        device = LoRa.readStringUntil(',');
       if(LoRaData.endsWith("Temperature"))
-        reading = LoRa.readStringUntil(' ');
-      if(LoRaData.endsWith("Date"))
-        date = LoRa.readStringUntil(' ');
-      if(LoRaData.endsWith("Hour"))
-        time = LoRa.readStringUntil(' ');
+        reading = LoRa.readStringUntil(',');
+      if(LoRaData.endsWith("DateTime"))
+        date = LoRa.readStringUntil(',');
 
     }
 
@@ -167,7 +165,6 @@ void loop() {
     myFile.print(",");
     myFile.print(date);
     myFile.print(",");
-    myFile.println(time);
     myFile.close();
 
     Serial.println("Saved data to SD card.");
@@ -179,8 +176,7 @@ void loop() {
     doc["group"] = id;
     readings[entryCount].device = device;
     readings[entryCount].reading = reading;
-    doc["date"] = date;
-    doc["hour"] = time;
+    doc["dateTime"] = date;
     doc["LoRa RSSI"] = rssi;
     doc["Wifi RSSI"] = String(WiFi.RSSI());
     entryCount++;

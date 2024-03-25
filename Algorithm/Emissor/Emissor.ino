@@ -108,8 +108,7 @@ void loop() {
   Serial.print(",");
   Serial.print(fecha.hour());
   Serial.print(":");
-  Serial.print(fecha.minute());
-  Serial.print(",");
+  Serial.println(fecha.minute());
   
   // Loop through each device, print out temperature data
   for(int i=0;i<numberOfDevices; i++) {
