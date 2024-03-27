@@ -1,5 +1,5 @@
 # Libraries ----
-library(xlsx)
+#library(xlsx)
 library(httr)
 library(jsonlite)
 library(tidyverse)
@@ -92,6 +92,7 @@ last_reading_graph <- function(data, group.selected){
     geom_bar(stat = "identity",
              fill=rgb(0.376,0.376,0.376)) +
     scale_x_continuous(breaks = seq(0, num.breaks, 1)) +
+    ylab("Temperature °C")+
     theme_minimal()
   
   ggplotly(graph)
@@ -119,7 +120,7 @@ mean_card_blocks <- function(data){
       style = "background-color: rgb(136, 171, 184); color: black; padding: 0.3vh; width: 10%; margin: 1vh",
       tags$h3(
         style = "text-align: center",
-        round(lst.reading.data$Value[lst.reading.data$Group==choice], 1)
+        str_glue(round(lst.reading.data$Value[lst.reading.data$Group==choice], 1), " °C")
       ),
       tags$h5(
         style = "text-align: end; margin-right: 10%",
@@ -149,6 +150,7 @@ curve_by_blocks <- function(database, group.selected, time.scale){
                     aes(x = DateTime, y = Reading, color = Device))+
       geom_line()+
       geom_point()+
+      ylab("Temperature °C")+
       theme_minimal()
   }
   if(time.scale == "day"){
@@ -160,6 +162,7 @@ curve_by_blocks <- function(database, group.selected, time.scale){
                     aes(x = Date, y = Reading, color = Device))+
       geom_line()+
       geom_point()+
+      ylab("Temperature °C")+
       theme_minimal()
   }
   if(time.scale == "week"){
@@ -171,6 +174,7 @@ curve_by_blocks <- function(database, group.selected, time.scale){
                     aes(x = Week, y = Reading, color = Device))+
       geom_line()+
       geom_point()+
+      ylab("Temperature °C")+
       theme_minimal()
   }
   if(time.scale == "month"){
@@ -182,6 +186,7 @@ curve_by_blocks <- function(database, group.selected, time.scale){
                     aes(x = Month, y = Reading, color = Device))+
       geom_line()+
       geom_point()+
+      ylab("Temperature °C")+
       theme_minimal()
   }
   
@@ -207,6 +212,7 @@ curve_mean_blocks <- function(database, time.scale){
                     aes(x = DateTime, y = Readings, color=Group))+
       geom_line()+
       geom_point()+
+      ylab("Temperature °C")+
       theme_minimal()
   }
   if(time.scale == "day"){
@@ -219,6 +225,7 @@ curve_mean_blocks <- function(database, time.scale){
                     aes(x = Date, y = Readings, group=Group))+
       geom_line()+
       geom_point()+
+      ylab("Temperature °C")+
       theme_minimal()
   }
   if(time.scale == "week"){
@@ -231,6 +238,7 @@ curve_mean_blocks <- function(database, time.scale){
                     aes(x = Week, y = Readings, group=Group))+
       geom_line()+
       geom_point()+
+      ylab("Temperature °C")+
       theme_minimal()
   }
   if(time.scale == "month"){
@@ -243,6 +251,7 @@ curve_mean_blocks <- function(database, time.scale){
                     aes(x = Month, y = Readings, group=1))+
       geom_line()+
       geom_point()+
+      ylab("Temperature °C")+
       theme_minimal()
   }
   
