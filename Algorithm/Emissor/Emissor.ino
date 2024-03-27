@@ -30,24 +30,19 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass oneWire reference to DallasTemperature library
 DallasTemperature sensors(&oneWire);
 
-// Number of temperature devices found
+// Number of temperature devices you are using
 int numberOfDevices; 
 
+// Define the maximum number of sensors
+#define MAX_SENSORS 4 
+
 // We'll use this variable to store a found device address
-DeviceAddress tempDeviceAddress; 
+DeviceAddress tempDeviceAddress[MAX_SENSORS];
+int foundSensors = 0;
 
 void setup() {
 
   Serial.begin(9600);
-
-  // LED blink
-  pinMode(LED_BUILTIN, OUTPUT);
-
-  // Sensors begin
-  sensors.begin();
-  
-  // Grab a count of devices on the wire
-  numberOfDevices = sensors.getDeviceCount();
 
   // Clock
   if (! rtc.begin())
@@ -56,7 +51,7 @@ void setup() {
     while(1);
     
   }
-  rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); //Upload code once with this line uncommented so the clock is adjusted, then coment this line and upload again
+  //rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); //Upload code once with this line uncommented so the clock is adjusted, then coment this line and upload again
   LoRa.setPins(ss, rst, dio0);
 
   // LoRa begin
@@ -68,25 +63,42 @@ void setup() {
   }
   LoRa.setSyncWord(0xF3);
 
+  // Sensors begin
+  sensors.begin();
+
   // locate devices on the bus
   Serial.print("Locating devices...");
+
+  // Grab a count of devices on the wire
+  numberOfDevices = sensors.getDeviceCount();
   Serial.print("Found ");
   Serial.print(numberOfDevices, DEC);
   Serial.println(" devices.");
   
-  // Loop through each device, print out address
-  for(int i=0;i<numberOfDevices; i++) {
-    // Search the wire for address
-    if(sensors.getAddress(tempDeviceAddress, i)) {
-      Serial.print("Found device ");
-      Serial.print(i, DEC);
-      Serial.print(" with address: ");
-      printAddress(tempDeviceAddress);
-      Serial.println();
-    } else {
-      Serial.print("Found ghost device at ");
-      Serial.print(i, DEC);
-      Serial.print(" but could not detect address. Check power and cabling");
+  while (foundSensors < MAX_SENSORS) {
+    sensors.begin();
+    numberOfDevices = sensors.getDeviceCount();
+
+    for (int i = 0; i < numberOfDevices && foundSensors < MAX_SENSORS; i++) {
+      if (sensors.getAddress(tempDeviceAddress[foundSensors], i)) {
+        Serial.print("Found device ");
+        Serial.print(foundSensors, DEC);
+        Serial.print(" with address: ");
+        printAddress(tempDeviceAddress[foundSensors]);
+        Serial.println();
+        foundSensors++; // Increment the counter for found sensors
+      } else {
+        Serial.print("Found ghost device at ");
+        Serial.print(i, DEC);
+        Serial.println(", but could not detect address. Check power and cabling");
+      }
+      
+    }
+    // If not all sensors are found, delay and then retry
+    if (foundSensors < MAX_SENSORS) {
+      Serial.println("Not all sensors found. Retrying in 5 seconds...");
+      delay(5000);
+      foundSensors = 0;
     }
   }
   
@@ -105,32 +117,25 @@ void loop() {
   Serial.print(fecha.month());
   Serial.print("/");
   Serial.print(fecha.year());
-  Serial.print(",");
+  Serial.print(", ");
   Serial.print(fecha.hour());
   Serial.print(":");
   Serial.println(fecha.minute());
   
   // Loop through each device, print out temperature data
-  for(int i=0;i<numberOfDevices; i++) {
-    // Search the wire for address
-    if(sensors.getAddress(tempDeviceAddress, i)){
-    
-    // Output the device ID
+  for(int i=0; i < numberOfDevices && i < MAX_SENSORS; i++) {
+    float tempC = sensors.getTempC(tempDeviceAddress[i]);
     Serial.print("Temperature for device: ");
     Serial.print(i,DEC);
-    Serial.print(" - ");
-    
-    // Print the data
-    float tempC = sensors.getTempC(tempDeviceAddress);
+    Serial.print(" - "); 
     Serial.println(tempC);
     sendPacket(i, tempC, fecha);
     delay(250);
-    }
   }
 
   
   
-  for(int i = 0; i<= 30; i++) //Here (i<=5400) you insert the number of seconds divided by two (i.e. you want 1 minute, so 60/2=30)
+  for(int i = 0; i<= 15; i++) //Here (i<=5400) you insert the number of seconds divided by two (i.e. you want 1 minute, so 60/2=30)
   {
      LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF);
   }

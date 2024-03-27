@@ -25,7 +25,6 @@ void POSTData()
       Serial.print("HTTP response code: ");
       Serial.println(httpResponseCode);
       String response = http.getString();
-      Serial.println(response);
     } else {
       Serial.print("HTTP POST request failed, error: ");
       Serial.println(httpResponseCode);

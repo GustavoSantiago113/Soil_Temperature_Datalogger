@@ -50,7 +50,7 @@ String LoRaData;
 int httpResponseCode;
 
 // Minimizing number of requests
-#define MAX_ENTRIES 23
+#define MAX_ENTRIES 4 // Number of sensors
 int entryCount = 0;
 struct Reading {
   String device;
@@ -134,7 +134,6 @@ void loop() {
   String device;
   String reading;
   String date;
-  String time;
 
   if (packetSize) {
 
@@ -164,7 +163,7 @@ void loop() {
     myFile.print(reading);
     myFile.print(",");
     myFile.print(date);
-    myFile.print(",");
+    myFile.println(",");
     myFile.close();
 
     Serial.println("Saved data to SD card.");
@@ -180,6 +179,14 @@ void loop() {
     doc["LoRa RSSI"] = rssi;
     doc["Wifi RSSI"] = String(WiFi.RSSI());
     entryCount++;
+
+    bool hasErrorReading = false;
+    for (int i = 0; i < entryCount; i++) {
+      if (readings[i].reading == "-127.00") {
+        hasErrorReading = true;
+        break; // Exit the loop early if an error reading is found
+      }
+    }
 
     if (entryCount == MAX_ENTRIES) {
       POSTData();
@@ -209,6 +216,11 @@ void loop() {
     }
     else{
       display.print("Error");
+    }
+
+    if(hasErrorReading == true){
+      display.setCursor(0,40);
+      display.print("Sensor reading error");
     }
     display.display();
 
